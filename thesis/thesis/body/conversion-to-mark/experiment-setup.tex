@@ -1,0 +1,38 @@
+\section{Experiment Setup}
+
+\subsection{Test Data}
+
+We had student code and marks from 2017 and 2018 classes to analyze. Our plan was to use our tool to generate marks for these classes and compare our automated marks with human-evaluated marks (ground-truth).
+
+\subsection{Cutoff Points}
+\label{sec:ctm-cutoffs}
+
+Recall that ClangAutoMarker's ultimate goal was to compute a student's mark, a value between 0 to 100, by comparing their solution's AST to the reference solution's AST. For a student to earn a full mark of 100 from our tool, the student would need to have structurally-identical code to the reference solution(s). However, this was essentially impossible unless the student had cheated in some form.
+
+Assuming that students did not plagiarize current or past students, we erred on the side of caution and automatically rounded up our automated marks from a certain cutoff point. In our experiments, we tested cutoff points at 90 and 95. We chose these cutoff points from experience: in this range, the students were close enough to full marks that if they were from a human marker, the minor deductions resulting in a 90 or 95 might have essentially been due to the marker's mood and how lenient they were with minor issues. However any marks lower than 90 from a human marker were very likely to be indicative of actual errors in the student program.
+
+We used the following formula to compute the students' final marks. To avoid confusion, we shall henceforth denote the final value to be returned to the student as \textquote{Mark} and denote the computed value from our methods in Sections~\ref{sec:ctm-full-marks} to \ref{sec:ctm-clustering} as \textquote{Score}. 
+
+\[
+  \text{Mark}_i =
+  \begin{cases}
+    \text{Score}_i & \text{if Score$_i$ $<$ Cutoff} \\
+    100            & \text{if Score$_i$ $\geq$ Cutoff}
+  \end{cases}
+\]
+
+\subsection{Effectiveness}
+
+We measured the effectiveness of ClangAutoMarker by counting how many assignments it could successfully automate, i.e. scored above the cutoff points of 90 or 95. Conversely, an assignment must be manually reviewed if we were uncertain about the mark we generated, i.e. scored below 90 or 95. There were two cases where this could happen.
+
+The first case was if the student code had non-conventional coding patterns. It is likely that there will be a few outlier students in every class who write their code significantly different than what we normally expect in our reference solutions. Even if their solution was functionally correct, their AST would have an extremely high edit distance from our reference solutions and thus would receive an undeserved low score.
+
+The second case was if the student program cannot be processed by our tool. This occurred if the student had syntactical errors or if the student's AST deviated from one of our assumptions and triggered an internal assertion error. For example, we assumed that all solution files have a \texttt{main} function; if this function was missing then we would not be able to perform any of our analyses and thus would require manual intervention.
+
+To capture both cases, we designated an assignment for manual review if its score was too low or non-existent (e.g. process ended early due to assertion error). For the sake of simplicity, we deemed an automated score to be too low and thus require manual review if it was below the cutoff points previously mentioned.
+
+\subsection{Accuracy and False Positives}
+
+Out of the assignments that our tool could automate, we evaluated the accuracy or false positive rate of our accepted predictions. We designated an assignment to be a false positive if its mark (not the same as score) was significantly higher than what a human marker assigned to it. In practice, we tolerated an excess of up to 10 points before we considered a mark to be a false positive because, as discussed in Section~\ref{sec:ctm-cutoffs}, human markers generally could vary their evaluation by up to 10 points for trivial issues.
+
+It is important to note that the marks we used as ground-truth also included a written report. Furthermore, our ground-truth marks also contained deductions from non-technical issues such as late submissions or plagiarism. Unfortunately, detailed historical data were not kept after the course ended. Since these unrelated deductions were included in our ground-truth, our real false positive rate might actually be lower than what we present.

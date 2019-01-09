@@ -1,0 +1,231 @@
+\documentclass[letterpaper,12pt,titlepage,oneside,final]{book}
+
+\title{Automating Programming Assignment Marking with AST Analysis}
+\author{Stephen Li}
+\date{} % TODO Update to date of presentation
+
+%----------------------------------------------------------------------
+% Settings and Packages
+%----------------------------------------------------------------------
+
+\usepackage[toc,page]{appendix} % Set up appendix
+\usepackage{mathtools,amsmath,amssymb,amstext} % Lots of math symbols and environments
+\usepackage{lipsum} % Generating dummy text to test out layout
+\usepackage[labelfont=bf]{caption} % Bold caption's "Figure x"
+\usepackage{multirow} % Allow table cell to span multiple rows
+\usepackage{makecell} % Allow multirow cells with linebreaks
+\usepackage{arydshln} % Dotted lines in table
+\usepackage{colortbl} % Coloured lines in table
+\usepackage{float} % Prevent figures/tables from floating out of place
+\usepackage{listings} % For code blocks
+\usepackage{booktabs} % For stylzing tables
+\usepackage{csquotes} % For stylzing quotes
+\usepackage{courier} % For courier font in code listing
+\usepackage[group-separator={,}]{siunitx}
+\usepackage{commath} % For abs symbols
+
+% For including graphics
+\usepackage[pdftex]{graphicx}
+\graphicspath{ {../media/img/} }
+
+% For drawing tikz diagrams
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows.meta,fit,positioning}
+
+% Space before footnote's bar
+\setlength{\skip\footins}{2cm}
+
+% Useful utilities
+\usepackage{etoolbox}
+
+% CHANGE THIS VALUE TO "true" as necessary, to improve printed results for hard copies
+% by overriding some options of the hyperref package below.
+\newbool{PrintVersion}
+\boolfalse{PrintVersion}
+
+\newbool{IsPHD}
+\boolfalse{IsPHD}
+
+% Load this package last because it overrides other packages' properties
+\usepackage[pdftex]{hyperref}
+\hypersetup{
+pdftitle={},
+pdfauthor={},
+    %------------------------
+    plainpages=false,       % needed if Roman numbers in frontpages
+    unicode=false,          % non-Latin characters in Acrobat’s bookmarks
+    pdftoolbar=true,        % show Acrobat’s toolbar?
+    pdfmenubar=true,        % show Acrobat’s menu?
+    pdffitwindow=false,     % window fit to page when opened
+    pdfstartview={FitH},    % fits the width of the page to the window
+    pdfnewwindow=true,      % links in new window
+    colorlinks=true,        % false: boxed links; true: colored links
+    }
+
+% For improved print quality, change some hyperref options
+\ifbool{PrintVersion}{
+\hypersetup{
+        citecolor=black, % color of links to bibliography
+        filecolor=black, % color of file links
+        linkcolor=black, % color of internal links
+        urlcolor=black   % color of external links
+        }
+        }{
+        \hypersetup{
+        citecolor=green,
+        filecolor=magenta,
+        linkcolor=blue,
+        urlcolor=cyan
+        }
+        }
+
+% Source code
+\lstset{
+, aboveskip = 2em
+, frame = single
+, basicstyle = \ttfamily\footnotesize
+, numbers = left
+, stepnumber = 1
+, escapechar = !
+}
+
+% For frontmatter page headings that don't count as sections
+\newcommand{\miniheading}[1]{\begin{center}\textbf{#1}\end{center}}
+
+% Space between each paragraph
+\setlength{\parskip}{\bigskipamount}
+
+% Space between table caption text and other text
+\captionsetup[table]{belowskip=2em}
+
+% Space under table
+\setlength{\textfloatsep}{4em}
+
+% Indent for table's labels
+\newcommand{\tspace}{\hspace{0.5cm}}
+
+% How high each line is
+\renewcommand{\baselinestretch}{1.2}
+
+% Change table cell padding
+\renewcommand{\arraystretch}{1.2}
+
+% Booktabs table rules without padding
+\newcommand{\Toprule}{\specialrule{\heavyrulewidth}{\abovetopsep}{0pt}}
+\newcommand{\Bottomrule}{\specialrule{\heavyrulewidth}{0pt}{\belowbottomsep}}
+\newcommand{\Midrule}{\specialrule{\lightrulewidth}{0pt}{0pt}}
+
+% Space below figure caption
+\captionsetup[figure]{belowskip=2em}
+
+% By default, each chapter will start on a recto (right-hand side)
+% page.  We also force each section of the front pages to start on
+% a recto page by inserting \cleardoublepage commands.
+% In many cases, this will require that the verso page be
+% blank and, while it should be counted, a page number should not be
+% printed.  The following statements ensure a page number is not
+% printed on an otherwise blank verso page.
+\let\origdoublepage\cleardoublepage
+\newcommand{\clearemptydoublepage}{\clearpage{\pagestyle{empty}\origdoublepage}}
+\let\cleardoublepage\clearemptydoublepage
+
+% Automatically center figures/tables
+\makeatletter
+\g@addto@macro\@floatboxreset\centering
+\makeatother
+
+\begin{document}
+
+%------------------------------------------------------------------------------
+% Front Matter
+%------------------------------------------------------------------------------
+
+\input{front/title}
+\cleardoublepage
+
+\input{front/examining-committee}
+\cleardoublepage
+
+\input{front/declaration}
+\cleardoublepage
+
+\input{front/abstract}
+\cleardoublepage
+
+\input{front/acknowledgements}
+\cleardoublepage
+
+\input{front/dedication}
+\cleardoublepage
+
+%------------------------------------------------------------------------------
+% Table of Contents
+%------------------------------------------------------------------------------
+
+\renewcommand\contentsname{Table of Contents}
+\tableofcontents
+\cleardoublepage
+\phantomsection    % allows hyperref to link to the correct page
+
+\addcontentsline{toc}{chapter}{List of Tables}
+\listoftables
+\cleardoublepage
+\phantomsection		% allows hyperref to link to the correct page
+
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+\cleardoublepage
+\phantomsection		% allows hyperref to link to the correct page
+
+% Change page numbering back to Arabic numerals
+\pagenumbering{arabic}
+
+%----------------------------------------------------------------------
+% Body
+%----------------------------------------------------------------------
+
+\input{body/introduction}
+\cleardoublepage
+
+\input{body/clangautomarker}
+\cleardoublepage
+
+\input{body/conversion-to-mark}
+\cleardoublepage
+
+\input{body/related-work}
+\cleardoublepage
+
+\input{body/conclusion}
+\cleardoublepage
+
+%------------------------------------------------------------------------------
+% Bibliography
+%------------------------------------------------------------------------------
+
+\bibliographystyle{plain}
+
+\cleardoublepage % This is needed if the book class is used, to place the anchor in the correct page,
+                 % because the bibliography will start on its own page.
+                 % Use \clearpage instead if the document class uses the "oneside" argument
+
+\phantomsection  % With hyperref package, enables hyperlinking from the table of contents to bibliography
+
+% The following statement causes the title "References" to be used for the bibliography section:
+\renewcommand*{\bibname}{References}
+
+% Add the References to the Table of Contents
+\addcontentsline{toc}{chapter}{\textbf{References}}
+
+\bibliography{thesis}
+\cleardoublepage
+
+%------------------------------------------------------------------------------
+% Back Matter
+%------------------------------------------------------------------------------
+
+\appendix
+
+\input{appendix/results}
+
+\end{document}

@@ -1,0 +1,12 @@
+\chapter{Conversion to Mark}
+\label{chap:ctm}
+
+At this stage in the pipeline, we have tree edit distances $T_{i,j}$ where $i\in[0, N)$ $j\in[0,M)$ for $N$ student solutions and $M$ reference solutions. Our next step is to convert these edit distances into $N$ marks, one for each student. We are not aware of any established techniques for this process. As a result, we investigated several approaches based on our intuition (Section~\ref{sec:ctm-full-marks} to \ref{sec:ctm-clustering}) and presented our results in Section~\ref{sec:ctm-results}.
+
+\input{body/conversion-to-mark/experiment-setup}
+\input{body/conversion-to-mark/full-marks}
+\input{body/conversion-to-mark/minimum-normalized-edit-distance}
+\input{body/conversion-to-mark/clustering}
+\input{body/conversion-to-mark/comparison}
+\input{body/conversion-to-mark/shortcomings}
+\input{body/conversion-to-mark/summary}

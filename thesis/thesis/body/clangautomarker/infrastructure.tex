@@ -1,0 +1,31 @@
+\section{Infrastructure}
+
+The ClangAutoMarker tool consists of two executables: a frontend and an aggregator. The frontend (Figure~\ref{fig:cam-compiler}) is responsible for parsing student and reference solutions into their respective ASTs and computing their tree edit distances. The aggregator (Figure~\ref{fig:cam-aggregator}) is responsible for consolidating tree edit distances into a single mark for the student.
+
+We are currently not aware of any techniques for aggregating tree edit distances between student and reference solutions into assignment marks. Therefore, we have done an exploratory analysis in Chapter~\ref{chap:ctm} on various approaches we devised for the aggregator based on our intuition.
+
+The frontend is written in C++ to leverage the LLVM infrastructure and the aggregator is written in Python; the two executables communicate through shared text files. While the aggregator could have been implemented as part of the frontend so that we have a single executable, there are a couple of engineering advantages that make Python more suitable for the aggregator.
+
+Firstly, performing numerical calculations and generating graphs is very simple and easy to implement and debug in Python due to the availability of specialized libraries such as Numpy \cite{lib-numpy}, Scikit-learn \cite{lib-scikit}, and Matplotlib \cite{lib-matplotlib}.
+
+Secondly, as we will soon discuss in Chapter~\ref{chap:ctm}, the parameters and equations in our calculations are determined based on trial-and-error. Furthermore computing edit distances takes hours whereas aggregating edit distances into marks only takes seconds. As a result, the lack of need to recompile the aggregator and recompute edit distances after modifying the aggregator's equations greatly improves our productivity while developing the tool.
+
+Thirdly, by having an external process i.e. the Python script, coordinate multiple frontend processes, we can avoid crashing an entire marking job, which could potentially take hours to complete, due to one malformed student solution or internal assertion error.
+
+%--------------------------------------
+\begin{figure}
+\input{../media/img/clangautomarker/compiler}
+\vspace*{0.5cm}
+\caption[Compiler Component of ClangAutoMarker]{This diagram depicts the data flow inside the compiler component of the ClangAutoMarker tool. Each run of the executable takes one student solution $S_i$ and one reference solution $R_j$ as input. The executable compiles the solutions into ASTs, computes their tree edit distance $T_{i,j}$, and prints out the result.}
+\label{fig:cam-compiler}
+\end{figure}
+%--------------------------------------
+
+%--------------------------------------
+\begin{figure}
+\input{../media/img/clangautomarker/aggregator}
+\vspace*{0.5cm}
+\caption[Aggregator Component of ClangAutoMarker]{This diagram depicts the data flow inside the aggregator component of the ClangAutoMarker tool. For a given student $S_i$, the aggregator repeats the process in Figure~\ref{fig:cam-compiler} for each reference solution $R_1 \ldots R_M$; it then aggregates the results into a final mark. Since there are no data dependencies between each reference solution, the aggregator can execute a new frontend process for each reference solution in parallel.}
+\label{fig:cam-aggregator}
+\end{figure}
+%--------------------------------------

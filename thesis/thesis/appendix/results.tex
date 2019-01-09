@@ -1,0 +1,35 @@
+\chapter{Results of Scoring Algorithms}
+
+This appendix contains the tables presenting the results of each tree edit distance scoring method we presented in Chapter~\ref{chap:ctm}.
+
+Assignments were considered \textquote{Automatable} if they scored higher than certain cutoff points. For these assignments, we analyzed their false positive rate; this was the percentage of assignments that scored higher than what they had originally earned from a human marker. Conversely, if an assignment scored lower than certain cutoff points or triggered processing errors due to unexpected AST structures or assertion failures, then it was designated for manual marking because we wanted to provide meaningful feedback to students for any deductions that they receive. 
+
+\begin{table}
+\caption{Always Assigning Full Marks}
+\label{tab:ctm-full-marks}
+\input{appendix/table_full-marks}
+\end{table}
+
+\begin{table}
+\caption{Using Minimum Normalized Edit Distance to Obtain Mark}
+\label{tab:ctm-min-dist}
+\input{appendix/table_min-dist}
+\end{table}
+
+\begin{table}
+\caption{Using K-Means Clustering to Obtain Mark}
+\label{tab:ctm-km}
+\input{appendix/table_km}
+\end{table}
+
+\begin{table}
+\caption{Using Gaussian Mixture Clustering to Obtain Mark}
+\label{tab:ctm-gm}
+\input{appendix/table_gm}
+\end{table}
+
+\begin{table}
+\caption{Using HDBSCAN Clustering to Obtain Mark}
+\label{tab:ctm-hdb}
+\input{appendix/table_hdb}
+\end{table}

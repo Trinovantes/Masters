@@ -1,0 +1,6 @@
+*.stderr
+*.stdout
+*.png
+*.tex
+*.txt
+*.csv

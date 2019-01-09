@@ -1,0 +1,115 @@
+%------------------------------------------------------------------------------
+\section{Simplifying the Clang AST}
+%------------------------------------------------------------------------------
+
+The first step of our tool is to take a student solution file and a reference solution file as input and parse them into ASTs using the Clang frontend from LLVM. After obtaining the Clang ASTs, we then simplify them into custom AST data structures.
+
+From a conceptual point-of-view, AST simplification aims to mimic the judgment process of a human reader. For example, a human marker may treat a while-loop, do-while-loop, and for-loop as identical even though their exit conditions are slightly different. By canonicalizing functionally similar sub-trees, we will be able to reduce the edit distances between functionally similar code and ultimately allow them to receive similar marks.
+
+From a practical point-of-view, AST simplification is the easiest way to use the Apted library \cite{pawlik2011rted} to compute tree edit distances. To use this library, we need a tree data structure that implements the library's specific interface. We determined that it is much easier to map the Clang AST to a custom AST that conforms to the expected interface than it is to modify Clang's internal data structures.
+
+The Clang codebase is extremely large; the internal interactions and dependencies are often sparsely documented and require insider knowledge to fully understand. As a result, any modifications that we want to make to the tree may potentially break another module. Therefore, by utilizing our own simplified tree data structure, we are free to make large (often destructive) changes to the tree, without worrying about unforeseeable side effects.
+
+Furthermore, the Clang codebase is also constantly changing; by mapping Clang's AST to our internal data structure, we are able to decouple our tool from changes in future versions of LLVM.
+
+Finally, since we are not interested in compiling the AST to bytecode, we do not need to keep as many details. As a result, simplifying our resulting tree data structure also saves memory and computation time.
+
+%------------------------------------------------------------------------------
+\subsection{If Statements}
+%------------------------------------------------------------------------------
+
+In an AST, an if-statement has at least two children: the condition and the true branch, i.e. a list of statements to execute when the condition is true. The if-statement may also have an optional false branch as its third child.
+
+There are countless ways to declare syntactically different but logically equivalent if-statements. It is infeasible to enumerate all the possibilities to canonicalize them into a common structure. Instead, we focused our efforts on the most common types found in student assignments. From manual inspection of student code, we found that the most common difference amongst  logically equivalent if-statements was due to using negation in the condition statement and swapping the true and false branches. As a result, we simplify students' if-statements by stripping out the outermost negations in the condition statement and swapping the true and false branch if there are an odd number of negations, as shown in Figure~\ref{fig:cam-simplify-if-neg}.
+
+\begin{figure}
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/simplify-if-neg-before.c}
+\end{minipage}
+\hfill
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/simplify-if-neg-after.c}
+\end{minipage}
+\caption[Negation in If Statement]{The logical equivalent of negating the condition in an \texttt{if} statement is swapping the statements in the true branch with the statements in the false branch.}
+\label{fig:cam-simplify-if-neg}
+\end{figure}
+
+%------------------------------------------------------------------------------
+\subsection{Loops}
+\label{sec:cam-loops}
+%------------------------------------------------------------------------------
+
+There are three types of loops in C: for-loops, do-loops, and do-while-loops. For the purpose of marking, there are no distinctions between these structures; we are only interested to know that the student is repeatedly executing some code under some condition. As a result, all three types of loops are simplified into a common structure despite not necessarily being logically equivalent, shown in Figures~\ref{fig:cam-simplify-loops-for} to \ref{fig:cam-simplify-loops-do}.
+
+\begin{figure}
+\lstinputlisting[language=C]{../media/code/simplify-loops-for-before.c}
+\begin{tikzpicture}[remember picture, overlay,
+  every node/.append style = { align = center, minimum height = 10pt}, text width = 2cm ]
+  \node [above left = 2em and -0.25 cm of a] (A) {Initializer};
+  \node [right = 0.25cm of A] (B) {Condition};
+  \node [right = 0.25cm of B] (C) {Afterthought};
+  \draw [-Latex] (A.south) -> ([yshift=0.0625cm, xshift=-0.25cm] a.north);
+  \draw [-Latex] (B.south) -> ([yshift=0.0625cm, xshift=-0.125cm] b.north);
+  \draw [-Latex] (C.south) -> ([yshift=0.0625cm, xshift=-0.5cm] c.north);
+\end{tikzpicture}
+\vspace{-1.5em}
+\lstinputlisting[language=C]{../media/code/simplify-loops-for-after.c}
+\caption[Simplifying For Loops]{A \textquote{standard} for-loop does not contain complex statements in the initializer and afterthought; it only has a variable declaration in the initializer and unary operator on the variable in the afterthought. To simplify these kinds of for-loops, we discard the initializer and afterthought because they are not important for markers.}
+\label{fig:cam-simplify-loops-for}
+\end{figure}
+
+\begin{figure}
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/simplify-loops-while-before.c}
+\end{minipage}
+\hfill
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/simplify-loops-while-after.c}
+\end{minipage}
+\caption[Simplifying While Loops]{Since the while-loop is already the simplest form of loop, we do not need to perform any additional work to simplify it.}
+\label{fig:cam-simplify-loops-while}
+\end{figure}
+
+\begin{figure}
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/simplify-loops-do-before.c}
+\end{minipage}
+\hfill
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/simplify-loops-do-after.c}
+\end{minipage}
+\caption[Simplifying Do-While Loops]{A do-while-loop is essentially a while-loop except that it executes the body once before checking the condition. For the purpose of marking, we simplify it by treating it exactly the same as a while-loop.}
+\label{fig:cam-simplify-loops-do}
+\end{figure}
+
+There is one caveat to this process for \textquote{non-standard} for-loops. In an AST, all for-loops have four components: an initializer, a condition, an afterthought, and the body. A standard for-loop is one that only has a variable declaration, often called the \textquote{loop counter}, in its initializer component and an unary operator in the afterthought component that modifies said loop counter. Although uncommon, it is also possible to write any number of statements in either components, separated by the comma operator; we denote these cases as non-standard for-loops (Figure~\ref{fig:cam-simplify-loops-for-nontrad}). When we encounter these types of for-loops, to preserve the original logic, we move the initializer above the loop node and the afterthought to the bottom of the loop body.
+
+\begin{figure}
+\lstinputlisting[language=C]{../media/code/simplify-loops-for-nontrad-before.c}
+\lstinputlisting[language=C]{../media/code/simplify-loops-for-nontrad-after.c}
+\caption[Non-Traditional For-Loops]{We cannot discard the initializer and afterthought in non-traditional for-loops because they may contain additional non-trivial information. As a result, we place them in logically equivalent positions in the AST: the initializer above the loop and afterthought at the end of the body.}
+\label{fig:cam-simplify-loops-for-nontrad}
+\end{figure}
+
+It is important that \textquote{standard} for-loops only modify the loop counter in the afterthought component and not inside the body. As the counter is only modified by a unary operator in the afterthought, it is not particularly interesting; therefore, we can ignore it for the purpose of marking. The simplification shown in Figure~\ref{fig:cam-simplify-loops-for} demonstrates that we have essentially discarded the loop counter from the AST.
+
+%------------------------------------------------------------------------------
+\subsection{Variable Usage}
+\label{sec:cam-simplify-var-usage}
+%------------------------------------------------------------------------------
+
+It is obvious that we cannot compare variables between different solutions by name because, with the exception of common patterns such as using \texttt{i} for counters, students working independently should not be using the same variable names. As a result, we need another method to identify variables and compare similarities across different solutions.
+
+Recall that our ultimate goal is to compute the edit distance between two ASTs and that  we want to minimize the distance between logically similar ASTs. For the purpose of marking, we would like to analyze variable usages with respect to function calls. In our system, a variable is defined to be the set of function calls that read and write to it.
+
+After constructing the initial AST, we scan the tree for variable references. If a variable is referenced in a function call (used as a function parameter), then we record the called function and register a \textquote{read} use to the variable. If a variable is on the left-hand-side of an assignment operator from a function call or is the child of a dereference operator inside a function parameter, then we record the called function and register a \textquote{write} use to the variable. Figure~\ref{fig:cam-simplify-var} illustrates this process.
+
+In addition, if a variable $v$ appears on the right-hand-side of an assignment operator, then the variable(s) on the left-hand-side inherit all of the read and write uses of $v$. We then repeat this process until we reach a fixed-point, when every variable's set of usages stop changing.
+
+\begin{figure}
+\lstinputlisting[language=C]{../media/code/simplify-var.c}
+\caption[Variable Usage]{The variable \texttt{foo} is on the left-hand-side of this function call so it registers a write usage from the function \texttt{bar}. The variables \texttt{x} and \texttt{y} are parameters for the function call so they register read usages from \texttt{bar}. Furthermore, since \texttt{y} is passed by reference and we do not perform interprocedural analysis, we assume the worst case and register a write usage to the variable from \texttt{bar} as well.}
+\label{fig:cam-simplify-var}
+\end{figure}
+
+Although it is possible to have two different variables (different names in the original program) be considered logically equivalent in our system, early experiments demonstrated that merging logically equivalent variables discards too much information from the AST and makes debugging extremely difficult. Instead, we opted to preserve the logically equivalent variable nodes in the AST but define their edit distance to be zero.

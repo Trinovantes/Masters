@@ -1,0 +1,3 @@
+*.tar.xz
+*.src/
+private.py

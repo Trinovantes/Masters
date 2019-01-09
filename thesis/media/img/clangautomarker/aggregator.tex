@@ -1,0 +1,22 @@
+\input{../media/img/clangautomarker/tikz-style}
+
+\begin{tikzpicture} [node distance = 2cm]
+\node [tallblock] (ted1) {$T_{i,1}$};
+\node [tallblock, right of = ted1] (ted2) {$T_{i,2}$};
+\node [           right of = ted2] (ted3) {$\ldots$};
+\node [tallblock, right of = ted3] (ted4) {$T_{i,M}$};
+\node [fit = (ted1) (ted2) (ted3) (ted4)] (input) {};
+
+\node [wideblock, below of = input, node distance = 3.5cm] (aggregator) {Aggregate $T_{i,1}$ \ldots $T_{i,M}$ into Single Mark};
+\node [fit = (aggregator), draw, inner sep=0.25cm, rectangle, dotted] (clang-automarker) {};
+\node at ([yshift=0.25cm]clang-automarker.north) [left] {ClangAutoMarker};
+\coordinate [above of = aggregator, node distance = 1.75cm] (combine-ted);
+
+\node [block, below of = clang-automarker, node distance = 3cm, minimum height = 2.5cm] (output) {Mark for Student $S_i$};
+
+\draw [] (ted1.south) |- (combine-ted);
+\draw [] (ted2.south) |- (combine-ted);
+\draw [] (ted4.south) |- (combine-ted);
+\path [line] (combine-ted) -- (aggregator);
+\path [line] (aggregator) -- (output);
+\end{tikzpicture}

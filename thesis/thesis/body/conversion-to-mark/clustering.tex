@@ -1,0 +1,44 @@
+\section{Clustering}
+\label{sec:ctm-clustering}
+
+The next idea we attempted was using clustering algorithms to group student solutions together. The goal was to put student solutions with similar edit distances, to some subset of reference solutions, in the same cluster.
+
+Under this mindset, we treated each student as an independent \textquote{data point} and their edit distance to each reference solution as an independent \textquote{feature}. Our data thus became an $N \times M$ matrix with $N$ rows for each student and $M$ columns for each reference solution.
+
+We made the assumption that full-mark solutions should have very similar features and thus should be very close to each other in the same cluster. Recall that the majority of the historical student solutions in this course had received full marks. Therefore, the majority of each cluster's points should also be very close to each other as well. As a result, we believed each cluster should theoretically be \textquote{centered} closer to the full-mark solutions than the incorrect solutions; therefore we hypothesized the closer a student solution was to the cluster's center, the higher the probability that the student solution should receive full marks.
+
+%------------------------------------------------------------------------------
+\subsubsection{Determining Number of Clusters}
+%------------------------------------------------------------------------------
+
+The K-Means and Gaussian Mixture clustering algorithms require us to specify how many clusters we want to find in our data points (student solutions). There are no straightforward approaches to choosing this value because it depends on the input data and use-case.
+
+If we choose too few clusters, then we risk putting too many student solutions in the same cluster despite them not being too closely related. If we choose too many clusters, then we risk not getting sufficient data to compute scores. For example, in the extreme case of $N$ clusters, every student would become its own cluster and, according to our original hypothesis of final score being based on closeness to a cluster's center, should receive full marks.
+
+However, there are techniques such as the \textquote{Elbow Method} \cite{thorndike1953belongs} shown in Figure~\ref{fig:ctm-num-clusters} that can be used for guidance. For our data, the Elbow Method recommended for us to use 4 clusters.
+
+\begin{figure}
+\includegraphics[width=\textwidth]{elbow}
+\caption[Using Elbow Method to find Optimal Number of Clusters]{The Elbow Method runs the K-Means clustering algorithm with a range of clusters and computes the sum of squared errors. This sum measures how close the predicted clusters match the data points; the greater the error, the less clusters fit the data. This graph converges to 0 at $N$ clusters where each point is its own cluster and thus has zero error. To find an appropriate number of clusters, we need to visually find an \textquote{elbow} point on the graph, i.e. where adding an additional cluster will not significantly reduce the error. In this graph, the elbow point is at 4 clusters.}
+\label{fig:ctm-num-clusters}
+\end{figure}
+
+%------------------------------------------------------------------------------
+\subsubsection{Cleaning Up Data}
+%------------------------------------------------------------------------------
+
+Although not essential, we chose to perform Principal Component Analysis (PCA) \cite{wold1987principal} on our data prior to clustering. PCA transforms our set of $M$ features into a smaller set of linearly uncorrelated features or \textquote{components}. The components are sorted in descending order of variance. In other words, the first few components theoretically capture the majority of the \textquote{information} in the source data.
+
+The most obvious advantage of PCA is reducing the runtime of our clustering algorithms because it eliminates features (columns in our data matrix) that represent very little information about our data points. This technique is also useful in visualization as it allows high-dimensional data to be presented in a 2D graph while preserving the majority of the information and relationships between data points.
+
+To use PCA, we need to specify how many components or features to keep. Similar to the Elbow Method to determine the number of clusters, we can look at the graph of cumulative explained variance shown in Figure~\ref{fig:ctm-num-components} to estimate an appropriate number of components. For our data, the graph recommended for us to use 6 components.
+
+\begin{figure}
+\includegraphics[width=\textwidth]{explained_variance_ratio}
+\caption[Explained Variance Ratio]{The explained variance conceptually represents the amount of information in the original data that each component captures. The first component captures almost 80\% of the original information; the second component captures another 5\%; and so on. This graph show the cumulative explained variance that each additional component captures. A rule-of-thumb for PCA is to choose the number of components at an \textquote{elbow point} where adding an additional component will not capture significantly more information. In this graph, the elbow point is at 6 components.}
+\label{fig:ctm-num-components}
+\end{figure}
+
+\input{body/conversion-to-mark/k-means}
+\input{body/conversion-to-mark/gaussian-mixture}
+\input{body/conversion-to-mark/hdbscan}

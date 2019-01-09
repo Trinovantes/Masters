@@ -1,0 +1,12 @@
+\section{Minimum Distance}
+
+We used multiple reference solutions to cover the various approaches to solving their respective assignments. A correct student solution should closely match at least one of these reference solutions and thus have an extremely small edit distance from it. Therefore, we initially assumed the student's mark should be based on the smallest edit distance to reference solutions.
+
+Since our cost model assigned an absolute value instead of relative difference, it was impractical to compare the actual edit distance between each reference solution. Therefore, we needed to first normalize the edit distances before we could properly compare how close a student solution is to other reference solutions.
+
+There are many approaches to normalizing values; we chose to use the MaxAbsScaler algorithm in the Sklearn Python library \cite{MaxAbsScaler} because we believed it was the most suitable one for our purpose. For reference solution $j$, the algorithm normalized its edit distance to each student $T_{1,j}, T_{2,j}, \ldots, T_{N,j}$ to be between 0 and 1. This algorithm also did not shift the data and was thus able to preserve the relative distances between students.
+
+After normalizing student $i$'s edit distances to each of the $M$ reference solutions, we calculated the student's score as follows:
+\begin{equation*}
+\text{Score}_i = 100 \cdot (1 - \min \{ T_{i,1}, T_{i,2}, \ldots, T_{i,M} \})
+\end{equation*}

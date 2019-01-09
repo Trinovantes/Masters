@@ -1,0 +1,33 @@
+%------------------------------------------------------------------------------
+\section{Pruning the AST}
+%------------------------------------------------------------------------------
+
+After simplification, the AST is still bloated with information unnecessary for marking. As a result, the edit distance between ASTs will result in a lot of noise and may not necessarily identify logically similar solutions. This step attempts to find as many of these unnecessary nodes as possible and delete them from the AST.
+
+\subsection{Useless Constructs}
+
+A human marker is generally only interested in control structures (e.g. if-statements and loops) or statements of interest (e.g. call statements). We denote nodes to be \textquote{useless} if they are inserted into the AST by the parser for syntactic purposes but serve no semantic meaning for a human marker. The most common nodes in this category include parentheses, implicit cast expressions, compound statements, etc. Figure~\ref{fig:cam-pruning-useless} illustrates the pruning process for these useless nodes.
+
+\begin{figure}
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/pruning-useless-before.c}
+\end{minipage}
+\hfill
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/pruning-useless-after.c}
+\end{minipage}
+\caption[Pruning Useless Constructs]{The Clang parser generates a lot of nodes unnecessary for a human marker. These nodes serve no purpose when trying to compute the edit distance between two solutions. The pruning step deletes nodes that serve no semantic meaning, such as these implicit cast expressions.}
+\label{fig:cam-pruning-useless}
+\end{figure}
+
+We remark that an alternative solution is to simply ignore these nodes and denote their edit distances to be zero. However, deleting them from the AST at this stage greatly reduces the computation time for work down the pipeline and makes the AST easier to read for debugging.
+
+\subsection{Uninteresting Functions}
+
+Many function calls such as \texttt{malloc} and \texttt{free} are not interesting to analyze. These statements are standard boilerplate code in every program and have no effect on the observable behavior of the final output. Although it is possible for these \textquote{uninteresting} functions to cause runtime exceptions such as segmentation faults, these problems can usually be detected through automated tools such as Valgrind \cite{lib-valgrind}. As a result, human markers generally ignore these function calls. Likewise, our tool also deletes these uninteresting function calls from our AST.
+
+\subsection{Uninteresting Variables}
+
+Recall from Section~\ref{sec:cam-simplify-var-usage} that we define variables to be the set of functions that reads and writes to them. We denote a variable to be \textquote{interesting} if its set of reader or writer functions includes an \textquote{interesting} function, defined on a per-assignment basis. For example, the Non-Blocking IO assignment (Figure~\ref{fig:intro-nonblockingio}) would denote functions from the cURL library such as \texttt{curl\_multi\_init()} as interesting.
+
+We first scan the AST for variable declarations and check whether their set of reader and writer functions includes an interesting function; if so, we mark it as an interesting variable. If an interesting variable appears on the right-hand-side of an assignment operator, variables on the left-hand-side are automatically marked as interesting as well. We then repeat this process until we cannot find any new interesting variables. Finally, we delete every variable that is not marked as interesting, and their respective references, from the AST.

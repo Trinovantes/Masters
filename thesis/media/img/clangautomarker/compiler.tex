@@ -1,0 +1,28 @@
+\input{../media/img/clangautomarker/tikz-style}
+
+\begin{tikzpicture}
+\node [block] (stuSol) {Student\\Solution $S_i$};
+\node [block, right of = stuSol, node distance = 4cm] (refSol) {Reference Solution $R_j$};
+\node [fit = (stuSol) (refSol)] (input) {};
+
+\node [wideblock, below of = input, node distance = 3.5cm] (step1) {Parse Code into AST with Clang};
+\node [wideblock, below of = step1, node distance = 1.5cm] (step2) {Simplify AST};
+\node [wideblock, below of = step2, node distance = 1.5cm] (step3) {Prune AST};
+\node [wideblock, below of = step3, node distance = 1.5cm] (step4) {Compute Tree Edit Distance with Apted};
+\node [fit = (step1)(step2)(step3)(step4), draw, inner sep=0.25cm, rectangle, dotted] (clang-automarker) {};
+\node at ([yshift=0.25cm]clang-automarker.north) [] {ClangAutoMarker};
+\coordinate [below of = step3, node distance = 0.75cm] (combine-ast);
+
+\node [block, below of = clang-automarker, node distance = 5.25cm, minimum height = 2.5cm] (output) {Tree Edit Distance $T_{i,j}$ from $S_i$ to $R_j$};
+
+\path [line] (stuSol.south) -- ([xshift=-2cm] step1.north);
+\path [line] (refSol.south) -- ([xshift= 2cm] step1.north);
+\path [line] ([xshift=-2cm] step1.south) -- ([xshift=-2cm] step2.north);
+\path [line] ([xshift= 2cm] step1.south) -- ([xshift= 2cm] step2.north);
+\path [line] ([xshift=-2cm] step2.south) -- ([xshift=-2cm] step3.north);
+\path [line] ([xshift= 2cm] step2.south) -- ([xshift= 2cm] step3.north);
+\draw [] ([xshift=-2cm] step3.south) |- (combine-ast);
+\draw [] ([xshift= 2cm] step3.south) |- (combine-ast);
+\path [line] (combine-ast) -- (step4.north);
+\path [line] (step4.south) -- (output);
+\end{tikzpicture}

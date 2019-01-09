@@ -1,0 +1,52 @@
+% Required for Ph.D. theses only
+
+\ifbool{IsPHD}{
+
+% Use longest text to define tab length
+\newenvironment{CommitteeTabbing}[1][\hspace{1.5in} \= ]
+    {\begin{tabbing}#1\kill}
+    {\end{tabbing}}
+
+\miniheading{Examining Committee Membership}
+
+\noindent
+The following served on the Examining Committee for this thesis. The decision of the Examining Committee is by majority vote.
+
+\bigskip
+
+\noindent
+\begin{CommitteeTabbing}
+External Examiner:
+\> John Smith \\
+\> Professor, Dept. of Philosophy, University of Waterloo \\
+\end{CommitteeTabbing}
+\bigskip
+
+\noindent
+\begin{CommitteeTabbing}
+Supervisors:
+\> John Smith \\
+\> Professor, Dept. of Philosophy, University of Waterloo \\
+\\
+\> Jane Doe \\
+\> Professor, Dept. of Philosophy, University of Waterloo \\
+\end{CommitteeTabbing}
+\bigskip
+
+\noindent
+\begin{CommitteeTabbing}
+Internal Member:
+\> John Smith \\
+\> Professor, Dept. of Philosophy, University of Waterloo \\
+\end{CommitteeTabbing}
+\bigskip
+
+\noindent
+\begin{CommitteeTabbing}
+Other Members:
+\> John Smith \\
+\> Professor, Dept. of Philosophy, University of Waterloo \\
+\end{CommitteeTabbing}
+\bigskip
+
+}{} % \ifbool{IsPHD}

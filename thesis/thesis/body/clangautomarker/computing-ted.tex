@@ -1,0 +1,63 @@
+%------------------------------------------------------------------------------
+\section{Computing Tree Edit Distance}
+%------------------------------------------------------------------------------
+
+Tree edit distance is formally defined as the minimum total cost of the steps needed to change from a source tree to a destination tree \cite{bille2005survey}. A \textquote{step} can either be inserting a node, deleting a node, or renaming a node. Clearly the trivial solution is to simply delete every node in the source tree and insert a copy of every node from the destination tree. The goal, however, is to find the sequence of steps that minimizes the total cost.
+
+After preprocessing the ASTs, we are now ready to compute the tree edit distance between the student solution's AST and the reference solution's AST. However before we can proceed, we first need to choose a starting point for the root of our trees. In the context of assignment marking, there are two potential candidates for the tree roots.
+
+The first choice is to root our trees at the file level. In this case, we treat the entire solution file as a single tree; functions and global variables are the immediate children of the root. The advantage of this approach is that we only need to compute the tree edit distance once. However, the disadvantage is that it is easy for logically trivial changes, such as different function orderings or function names, to significantly impact the final edit distance value.
+
+The second choice is to root our trees at the function level. In this case, we need to compute a different tree edit distance for each matching function between the student and reference solution. For example, we would have to compute the edit distance between the tree corresponding to \texttt{main()} in the student solution to the tree corresponding to \texttt{main()} in the reference solution. We then repeat this process for each pair of matching functions between the student and reference solution.
+
+Between these two choices, we decided the function-level approach is less prone to miscalculating tree edit distances between logically similar solutions. Since the tree edit distance algorithm library we are using does not have a \textquote{reorder} operation, we want to avoid the case where the students' functions are in a different order than the reference solution.
+
+%------------------------------------------------------------------------------
+\subsection{Inlining Unexpected Functions}
+%------------------------------------------------------------------------------
+
+Before we pass the ASTs to our tree edit distance algorithm, we need to consider the potential case of unexpected helper functions created by the students. In programming assignments, some students may create helper functions to avoid duplicating code. This is problematic because the edit distance algorithm does not take the context of the nodes to edit into account.
+
+Research in static analysis and automated marking generally focuses on single functions because inter-procedural analysis is exponentially more complex and time consuming. Luckily in our course, students historically do not use helper functions; of those that do, they mainly use \textquote{pure functions}, i.e. functions that do not have any side effects and only have one return statement. In addition, emperical evidence indicate that student helper functions are rarely recursive and do not include complex logic. From this observation, we devised a simple technique (Figure~\ref{fig:cam-inlining}) to inline these helper functions' ASTs into the caller's AST prior to computing edit distances. Should a student solution contain a more complicated helper function, their solution will be designated for manual marking.
+
+\begin{figure}
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/inlining-before.c}
+\end{minipage}
+\hfill
+\begin{minipage}{.45\textwidth}
+\lstinputlisting[language=C]{../media/code/inlining-after.c}
+\end{minipage}
+\caption[Inlining Unexpected Student Functions]{Our inliner first deletes the parameter list in the function root. It then replaces every reference to the parameters with the respective argument from the caller. Finally, it replaces the original function call with the child of the return statement.}
+\label{fig:cam-inlining}
+\end{figure}
+
+%------------------------------------------------------------------------------
+\subsection{Cost Model for Comparing ASTs}
+\label{sec:cam-cost-model}
+%------------------------------------------------------------------------------
+
+The last component to consider before we pass the ASTs to our tree edit distance algorithm is the cost function or model that determines the actual cost of each edit step. A cost model, given an input node, returns the \textquote{cost} to insert a copy of it into the source tree, delete it from the source tree, or rename it to a second input node.
+
+By default, every node has an edit distance of one. Clearly, this is not ideal because some nodes should more important than others. For example, if a student forgot to call \texttt{free()} at the end of their program, they should lose a few marks (small insertion cost) whereas if they forgot to call \texttt{curl\_multi\_perform()}, they should lose a lot of marks (high insertion cost). Furthermore, inconsequential node differences such as parentheses should be penalized less, if at all. Therefore, we have added additional analysis to our cost model to ensure similar nodes and structures have reduced edit costs and key function calls have heavier penalties.
+
+\subsubsection{Variables}
+\label{sec:cam-ted-declref}
+
+There are two types of variables to consider in our ASTs: external and internal variables.
+
+External variables are variables defined outside the student or reference solution files. These are usually library constants. For example, students may choose to use \texttt{CURLE\_OK} from the cURL library instead of its hard-coded value of 0 for code readability. To determine if two external variables are \textquote{equivalent}, we check their types and names. We do not check for literal value because we want to encourage good coding practices such as using library defined constants. Furthermore, we do not need to worry about naming conflicts because the Clang frontend will catch them beforehand.
+
+Internal variables are variables defined inside the student or reference solution files. These include global variables as well as scope-level variables such as loop counters and function parameters. Recall from Section~\ref{sec:cam-simplify-var-usage} that variables are defined to be the set of functions that read and write to them. When comparing internal variables, we consider them to be \textquote{equivalent} and thus have zero edit cost if the intersections of their reader or writer sets are not empty.
+
+\subsubsection{Conditions}
+
+There are often many ways to write the same or similar behaving conditions for if-statements and loops. Without relying on SAT solvers, it is difficult to know whether two condition nodes are logically similar. For the purpose of marking, we noticed that simply comparing the set of variables and function calls between two different conditions is sufficient for determining logically similar code.
+
+We define the edit cost between two conditions to be zero if they share at least one \textquote{equivalent} variable (described in Section~\ref{sec:cam-ted-declref}). If one condition has a function call to $f$, then the other condition must either contain a function call to $f$ or a variable that has been written to by $f$.
+
+\subsubsection{Weighting Key Function Usage}
+
+Conceptually, the key aspects to look for when marking should be how students make their function calls to the assignment's corresponding libraries. As a result, we want to penalize improper usage, i.e. increase the cost to insert the missing call statement to the student's AST such that it matches the reference AST.
+
+We assign each \textquote{key function} a weight on a per-assignment basis. Anywhere that requires a call to one of these key functions will use the associated weight---generally magnitudes higher than other edit costs.

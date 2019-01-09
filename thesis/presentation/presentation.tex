@@ -1,0 +1,117 @@
+\documentclass{beamer}
+
+\usetheme{default}
+
+\usepackage{pgfpages}
+%\setbeameroption{hide notes} % Only slides
+%\setbeameroption{show only notes} % Only notes
+\setbeameroption{show notes on second screen} % Both
+
+\newcommand{\Title}{Automating Programming Assignment Marking with AST Analysis}
+\title{\Title}
+\author{Stephen Li}
+\date{Jan 8, 2019}
+\institute[University of Waterloo]
+{
+  Faculty of Mathematics\\
+  University of Waterloo
+}
+
+% Page numbers
+\addtobeamertemplate{navigation symbols}{}{%
+    \usebeamerfont{footline}%
+    \usebeamercolor[fg]{footline}%
+    \hspace{1em}%
+    \insertframenumber/\inserttotalframenumber
+}
+
+\newcommand{\TOCSlide}[1]{
+\begin{frame}<beamer>
+\tableofcontents[#1]
+\end{frame}
+}
+
+\AtBeginSubsection[]
+{
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+%\TOCSlide{currentsection,currentsubsection}
+}
+
+% For including graphics
+\graphicspath{ {../media/img/} }
+
+% For including code
+\definecolor{aliceblue}{rgb}{0.94, 0.97, 1.0}
+\usepackage{listings}
+\usepackage{ulem}
+\usepackage{courier}
+\lstset{
+, frame=single
+, rulecolor = \color{aliceblue}
+, backgroundcolor = \color{aliceblue}
+, basicstyle = \small\ttfamily
+, stepnumber = 1
+, escapechar = !
+}
+
+% For tikz diagrams
+\usepackage{tikz}
+\usetikzlibrary{shapes}
+\usetikzlibrary{fit}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{trees}
+
+% For quotations
+\usepackage{csquotes}
+
+% For tables
+\usepackage{multirow} % Allow table cell to span multiple rows
+\usepackage{booktabs} % For stylzing tables
+\usepackage{colortbl} % Coloured lines in table
+\usepackage{makecell} % Allow multirow cells with linebreaks
+
+% Change table cell padding
+\renewcommand{\arraystretch}{1.2}
+
+% Booktabs table rules without padding
+\newcommand{\Toprule}{\specialrule{\heavyrulewidth}{\abovetopsep}{0pt}}
+\newcommand{\Bottomrule}{\specialrule{\heavyrulewidth}{0pt}{\belowbottomsep}}
+\newcommand{\Midrule}{\specialrule{\lightrulewidth}{0pt}{0pt}}
+
+% https://tex.stackexchange.com/questions/159378/cline-disappears-in-beamer
+% after package colortbl is loaded
+\makeatletter
+\patchcmd\@cline
+  {\arrayrulewidth\hfill}% search
+  {\arrayrulewidth\hfill\kern\z@}% replace
+  {}% success
+  {\errmessage{Patching \string\@cline\space failed}}% failure
+\makeatother
+
+\begin{document}
+
+%----------------------------------------------------------------------
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\note{
+\begin{itemize}
+\item I will be presenting my masters thesis: \Title
+\end{itemize}
+}
+
+%----------------------------------------------------------------------
+
+\input{slides/introduction}
+\input{slides/clangautomarker}
+\input{slides/conversion-to-mark}
+\input{slides/summary}
+
+%----------------------------------------------------------------------
+
+\end{document}
+
+
