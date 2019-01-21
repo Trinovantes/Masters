@@ -6,7 +6,7 @@
 
 ## Compiling Code
 
-We first need to download, extract, and symlink the appropriate LLVM/Clang source code. Go inside `code` directory and run:
+We first need to download, extract, and symlink the appropriate LLVM/Clang source code. Go inside `src` directory and run:
 ```
 ./setup.py
 ```
